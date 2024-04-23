@@ -1,6 +1,6 @@
 import mmap
 import os
-from ctypes import c_int, string_at
+from ctypes import string_at
 
 from webcam import v4l2
 
@@ -22,6 +22,8 @@ class WebCam:
         self._init()
 
     def __del__(self):
+        if self._is_opening:
+            self.close()
         os.close(self._fd)
 
     def __repr__(self) -> str:
@@ -78,17 +80,13 @@ class WebCam:
     def open(self):
         if self._is_opening:
             return
-        v4l2.VIDIOC_STREAMON(
-            self._fd, c_int(v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
-        )
+        v4l2.VIDIOC_STREAMON(self._fd, v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         self._is_opening = True
 
     def close(self):
         if not self._is_opening:
             return
-        v4l2.VIDIOC_STREAMOFF(
-            self._fd, c_int(v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
-        )
+        v4l2.VIDIOC_STREAMOFF(self._fd, v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         self._is_opening = False
 
     @property

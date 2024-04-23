@@ -40,6 +40,8 @@ def _IOW(type, nr, struct):
     request = _IOC(_IOC_WRITE, ord(type), nr, sizeof(struct))
 
     def f(fileno, buffer):
+        if not isinstance(buffer, struct):
+            buffer = struct(buffer)
         ioctl(fileno, request, buffer)
 
     return f
