@@ -1,22 +1,25 @@
+import mmap
 import os
+from ctypes import c_int, string_at
 
 from webcam import v4l2
 
 
-def a2s(l):
-    return "".join([chr(c) for c in l if c])
+class WebCamException(Exception):
+    def __init__(self, msg: str):
+        super().__init__(msg)
 
 
 class WebCam:
     def __init__(self, devnum: int):
         self._device = f"/dev/video{devnum}"
         self._fd = os.open(self._device, os.O_RDWR)
-        self._cap_readwrite = False
-        self._cap_streaming = False
+        self._available_pixfmt = {}
+        self._buffers = []
+        self._is_opening = False
 
-        self._check_capability()
-        self._check_fmt()
-        self._set_fmt()
+        self._check()
+        self._init()
 
     def __del__(self):
         os.close(self._fd)
@@ -24,23 +27,13 @@ class WebCam:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(device={self._device!r})"
 
-    def _check_capability(self):
-        cap = v4l2.VIDIOC_QUERYCAP(self._fd)
-        if not cap.capabilities & v4l2.V4L2_CAP_VIDEO_CAPTURE:
-            raise OSError(f"{self._device} can not capture video")
-        if cap.capabilities & v4l2.V4L2_CAP_READWRITE:
-            self._cap_readwrite = True
-        if cap.capabilities & v4l2.V4L2_CAP_STREAMING:
-            self._cap_streaming = True
-        # print("driver:", a2s(cap.driver))
-        # print("card:", a2s(cap.card))
-        # print("bus_info:", a2s(cap.bus_info))
-        # print("version:", hex(cap.version))
-        # print("capabilities:", hex(cap.capabilities))
-        # print("device_caps:", hex(cap.device_caps))
-        # print("reserved:", a2s(cap.reserved))
+    def _check(self):
+        self._capability = v4l2.VIDIOC_QUERYCAP(self._fd)
+        if not self._capability.capabilities & v4l2.V4L2_CAP_VIDEO_CAPTURE:
+            raise WebCamException(f"{self._device} can not capture video")
+        if not self._capability.capabilities & v4l2.V4L2_CAP_STREAMING:
+            raise WebCamException(f"{self._device} does not support streaming")
 
-    def _check_fmt(self):
         vfmt = v4l2.v4l2_fmtdesc()
         vfmt.type = v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE
         index = 0
@@ -51,21 +44,53 @@ class WebCam:
                 v4l2.VIDIOC_ENUM_FMT(self._fd, vfmt)
             except OSError:
                 break
-            # print("index:", vfmt.index)
-            # print("type:", vfmt.type)
-            # print("flags:", vfmt.flags)
-            # print("description:", a2s(vfmt.description))
-            # print("pixelformat:", hex(vfmt.pixelformat))
-            # print("mbus_code:", vfmt.mbus_code)
-            # print("reserved:", a2s(vfmt.reserved))
+            self._available_pixfmt.setdefault(
+                string_at(vfmt.description).decode(), vfmt.pixelformat
+            )
 
-    def _set_fmt(self):
+    def _init(self):
         vfmt = v4l2.v4l2_format()
         vfmt.type = v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE
         vfmt.fmt.pix.width = 640
         vfmt.fmt.pix.height = 480
-        vfmt.fmt.pix.pixelformat = v4l2.V4L2_PIX_FMT_RGB32
+        vfmt.fmt.pix.pixelformat = v4l2.V4L2_PIX_FMT_MJPEG
+        v4l2.VIDIOC_S_FMT(self._fd, vfmt)
+
+        reqbuf = v4l2.v4l2_requestbuffers()
+        reqbuf.type = v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE
+        reqbuf.memory = v4l2.v4l2_memory.V4L2_MEMORY_MMAP
+        reqbuf.count = 16
         try:
-            v4l2.VIDIOC_S_FMT(self._fd, vfmt)
+            v4l2.VIDIOC_REQBUFS(self._fd, reqbuf)
         except OSError:
-            raise OSError("can not set webcam")
+            raise WebCamException(f"{self._device} does not support mmap-streaming")
+
+        for i in range(reqbuf.count):
+            buffer = v4l2.v4l2_buffer()
+            buffer.type = reqbuf.type
+            buffer.memory = v4l2.v4l2_memory.V4L2_MEMORY_MMAP
+            buffer.index = i
+            v4l2.VIDIOC_QUERYBUF(self._fd, buffer)
+            buffer_mmap = mmap.mmap(
+                self._fd, length=buffer.length, offset=buffer.m.offset
+            )
+
+    def open(self):
+        if self._is_opening:
+            return
+        v4l2.VIDIOC_STREAMON(
+            self._fd, c_int(v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
+        )
+        self._is_opening = True
+
+    def close(self):
+        if not self._is_opening:
+            return
+        v4l2.VIDIOC_STREAMOFF(
+            self._fd, c_int(v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
+        )
+        self._is_opening = False
+
+    @property
+    def is_opening(self) -> bool:
+        return self._is_opening

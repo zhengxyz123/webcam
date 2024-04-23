@@ -18,5 +18,5 @@ while True:
         line = line[: line.find("/*")]
     line = line.replace("\t", " ")
     _, name, value = line.split(" ", 2)
-    value = value.replace("'", "\"").strip()
+    value = value.replace("'", '"').strip()
     print(f"{name} = {value}")
