@@ -1,4 +1,4 @@
-import mmap
+from mmap import mmap
 import os
 from ctypes import string_at
 
@@ -15,7 +15,7 @@ class WebCam:
         self._device = f"/dev/video{devnum}"
         self._fd = os.open(self._device, os.O_RDWR)
         self._available_pixfmt = {}
-        self._buffers = []
+        self._mmaps = []
         self._is_opening = False
 
         self._check()
@@ -24,6 +24,8 @@ class WebCam:
     def __del__(self):
         if self._is_opening:
             self.close()
+        for m in self._mmaps:
+            m.close()
         os.close(self._fd)
 
     def __repr__(self) -> str:
@@ -61,7 +63,7 @@ class WebCam:
         reqbuf = v4l2.v4l2_requestbuffers()
         reqbuf.type = v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE
         reqbuf.memory = v4l2.v4l2_memory.V4L2_MEMORY_MMAP
-        reqbuf.count = 16
+        reqbuf.count = 4
         try:
             v4l2.VIDIOC_REQBUFS(self._fd, reqbuf)
         except OSError:
@@ -73,9 +75,10 @@ class WebCam:
             buffer.memory = v4l2.v4l2_memory.V4L2_MEMORY_MMAP
             buffer.index = i
             v4l2.VIDIOC_QUERYBUF(self._fd, buffer)
-            buffer_mmap = mmap.mmap(
+            v4l2.VIDIOC_QBUF(self._fd, buffer)
+            self._mmaps.append(mmap(
                 self._fd, length=buffer.length, offset=buffer.m.offset
-            )
+            ))
 
     def open(self):
         if self._is_opening:
@@ -88,6 +91,17 @@ class WebCam:
             return
         v4l2.VIDIOC_STREAMOFF(self._fd, v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         self._is_opening = False
+
+    def capture(self) -> bytes:
+        if not self._is_opening:
+            self.open()
+        buffer = v4l2.v4l2_buffer()
+        buffer.type = v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE
+        buffer.memory = v4l2.v4l2_memory.V4L2_MEMORY_MMAP
+        v4l2.VIDIOC_DQBUF(self._fd, buffer)
+        result = self._mmaps[buffer.index].read(buffer.length)
+        v4l2.VIDIOC_QBUF(self._fd, buffer)
+        return result
 
     @property
     def is_opening(self) -> bool:
