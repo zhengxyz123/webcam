@@ -63,7 +63,7 @@ class WebCam:
         reqbuf = v4l2.v4l2_requestbuffers()
         reqbuf.type = v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE
         reqbuf.memory = v4l2.v4l2_memory.V4L2_MEMORY_MMAP
-        reqbuf.count = 4
+        reqbuf.count = 2
         try:
             v4l2.VIDIOC_REQBUFS(self._fd, reqbuf)
         except OSError:
@@ -100,8 +100,13 @@ class WebCam:
         buffer.memory = v4l2.v4l2_memory.V4L2_MEMORY_MMAP
         v4l2.VIDIOC_DQBUF(self._fd, buffer)
         result = self._mmaps[buffer.index].read(buffer.length)
+        self._mmaps[buffer.index].seek(0)
         v4l2.VIDIOC_QBUF(self._fd, buffer)
         return result
+
+    def save(self, name):
+        with open(name, "wb") as f:
+            f.write(self.capture())
 
     @property
     def is_opening(self) -> bool:
