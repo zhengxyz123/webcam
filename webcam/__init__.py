@@ -111,7 +111,7 @@ class WebCam:
         v4l2.VIDIOC_STREAMOFF(self._fd, v4l2.v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         self._is_opening = False
 
-    def capture(self):
+    def capture(self) -> bytes:
         if not self._is_opening:
             self.open()
         buffer = v4l2.v4l2_buffer(
