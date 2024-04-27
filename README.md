@@ -19,8 +19,8 @@ camera.close()
 You also have access to some controls like brightness, contrast and so on.
 
 ```python
-print(camera["brightness"])
-camera["contrast"] += 1
+print(camera.controls["brightness"])
+camera.controls["contrast"] += 1
 ```
 
 `example.py` provide a GUI to view pictures captured by webcam.

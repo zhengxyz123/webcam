@@ -13,6 +13,8 @@ class ExampleWindow(Window):
         self.webcam = WebCam(0)
         pic = BytesIO(self.webcam.capture())
         self.image = load_image("image.jpg", pic)
+        self.keyhandler = key.KeyStateHandler()
+        self.push_handlers(self.keyhandler)
         clock.schedule_once(self._update, 1 / 30)
 
     def on_close(self):
@@ -23,29 +25,26 @@ class ExampleWindow(Window):
         self.clear()
         self.image.blit(0, 0)
 
-    def on_key_press(self, symbol, modifiers):
-        if symbol == key.B:
-            if modifiers & key.LSHIFT:
-                self.webcam["brightness"] -= 1
-            else:
-                self.webcam["brightness"] += 1
-        elif symbol == key.C:
-            if modifiers & key.LSHIFT:
-                self.webcam["contrast"] -= 1
-            else:
-                self.webcam["contrast"] += 1
-        elif symbol == key.G:
-            if modifiers & key.LSHIFT:
-                self.webcam["gamma"] -= 1
-            else:
-                self.webcam["gamma"] += 1
-        elif symbol == key.S:
-            if modifiers & key.LSHIFT:
-                self.webcam["sharpness"] -= 1
-            else:
-                self.webcam["sharpness"] += 1
-
     def _update(self, dt):
+        ctrl = "none"
+        if self.keyhandler[key.B]:
+            ctrl = "brightness"
+        elif self.keyhandler[key.C]:
+            ctrl = "contrast"
+        elif self.keyhandler[key.G]:
+            ctrl = "gamma"
+        elif self.keyhandler[key.S]:
+            ctrl = "sharpness"
+
+        delta = 0
+        if self.keyhandler[key.UP]:
+            delta = 1
+        elif self.keyhandler[key.DOWN]:
+            delta = -1
+
+        if ctrl != "none":
+            self.webcam.controls[ctrl] += delta
+
         pic = BytesIO(self.webcam.capture())
         self.image = load_image("image.jpg", pic)
         clock.schedule_once(self._update, 1 / 30)

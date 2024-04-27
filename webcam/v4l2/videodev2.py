@@ -347,6 +347,59 @@ class v4l2_control(ctypes.Structure):
     ]
 
 
+# /usr/include/linux/videodev2.h:1776
+class v4l2_ctrl_type(IntEnum):
+    V4L2_CTRL_TYPE_INTEGER = 1
+    V4L2_CTRL_TYPE_BOOLEAN = 2
+    V4L2_CTRL_TYPE_MENU = 3
+    V4L2_CTRL_TYPE_BUTTON = 4
+    V4L2_CTRL_TYPE_INTEGER64 = 5
+    V4L2_CTRL_TYPE_CTRL_CLASS = 6
+    V4L2_CTRL_TYPE_STRING = 7
+    V4L2_CTRL_TYPE_BITMASK = 8
+    V4L2_CTRL_TYPE_INTEGER_MENU = 9
+    V4L2_CTRL_COMPOUND_TYPES = 0x0100
+    V4L2_CTRL_TYPE_U8 = 0x0100
+    V4L2_CTRL_TYPE_U16 = 0x0101
+    V4L2_CTRL_TYPE_U32 = 0x0102
+    V4L2_CTRL_TYPE_AREA = 0x0106
+    V4L2_CTRL_TYPE_HDR10_CLL_INFO = 0x0110
+    V4L2_CTRL_TYPE_HDR10_MASTERING_DISPLAY = 0x0111
+    V4L2_CTRL_TYPE_H264_SPS = 0x0200
+    V4L2_CTRL_TYPE_H264_PPS = 0x0201
+    V4L2_CTRL_TYPE_H264_SCALING_MATRIX = 0x0202
+    V4L2_CTRL_TYPE_H264_SLICE_PARAMS = 0x0203
+    V4L2_CTRL_TYPE_H264_DECODE_PARAMS = 0x0204
+    V4L2_CTRL_TYPE_H264_PRED_WEIGHTS = 0x0205
+    V4L2_CTRL_TYPE_FWHT_PARAMS = 0x0220
+    V4L2_CTRL_TYPE_VP8_FRAME = 0x0240
+    V4L2_CTRL_TYPE_MPEG2_QUANTISATION = 0x0250
+    V4L2_CTRL_TYPE_MPEG2_SEQUENCE = 0x0251
+    V4L2_CTRL_TYPE_MPEG2_PICTURE = 0x0252
+    V4L2_CTRL_TYPE_VP9_COMPRESSED_HDR = 0x0260
+    V4L2_CTRL_TYPE_VP9_FRAME = 0x0261
+    V4L2_CTRL_TYPE_HEVC_SPS = 0x0270
+    V4L2_CTRL_TYPE_HEVC_PPS = 0x0271
+    V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS = 0x0272
+    V4L2_CTRL_TYPE_HEVC_SCALING_MATRIX = 0x0273
+    V4L2_CTRL_TYPE_HEVC_DECODE_PARAMS = 0x0274
+
+
+# /usr/include/linux/videodev2.h:1824
+class v4l2_queryctrl(ctypes.Structure):
+    _fields_ = [
+        ("id", _u32),
+        ("type", _u32),
+        ("name", _u8 * 32),
+        ("minimum", _s32),
+        ("maximum", _s32),
+        ("step", _s32),
+        ("default_value", _s32),
+        ("flags", _u32),
+        ("reserved", _u32 * 2),
+    ]
+
+
 # /usr/include/linux/videodev2.h:2131
 class v4l2_vbi_format(ctypes.Structure):
     _fields_ = [
@@ -457,4 +510,5 @@ VIDIOC_STREAMON = _IOW("V", 18, ctypes.c_int)
 VIDIOC_STREAMOFF = _IOW("V", 19, ctypes.c_int)
 VIDIOC_G_CTRL = _IOWR("V", 27, v4l2_control)
 VIDIOC_S_CTRL = _IOWR("V", 28, v4l2_control)
+VIDIOC_QUERYCTRL = _IOWR("V", 36, v4l2_queryctrl)
 VIDIOC_TRY_FMT = _IOWR("V", 64, v4l2_format)
