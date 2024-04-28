@@ -1,7 +1,4 @@
-from io import BytesIO
-
 from pyglet import app, clock
-from pyglet.image import load as load_image
 from pyglet.window import Window, key
 
 from webcam import WebCam
@@ -11,8 +8,8 @@ class ExampleWindow(Window):
     def __init__(self):
         super().__init__(width=640, height=480, caption="webcam")
         self.webcam = WebCam(0)
-        pic = BytesIO(self.webcam.capture())
-        self.image = load_image("image.jpg", pic)
+        self.webcam.open()
+        self.image = self.webcam.capture()
         self.keyhandler = key.KeyStateHandler()
         self.push_handlers(self.keyhandler)
         clock.schedule_once(self._update, 1 / 30)
@@ -45,8 +42,7 @@ class ExampleWindow(Window):
         if ctrl != "none":
             self.webcam.controls[ctrl] += delta
 
-        pic = BytesIO(self.webcam.capture())
-        self.image = load_image("image.jpg", pic)
+        self.image = self.webcam.capture()
         clock.schedule_once(self._update, 1 / 30)
 
 

@@ -40,5 +40,5 @@ class BaseWebCam:
 
 
 if platform.startswith("linux") or platform.startswith("freebsd"):
-    from webcam.v4l2.webcam import v4l2WebCam as WebCam
-    from webcam.v4l2.webcam import v4l2WebCamControlsManager as WebCamControlsManager
+    from webcam.v4l2 import v4l2WebCam as WebCam
+    from webcam.v4l2 import v4l2WebCamControlsManager as WebCamControlsManager
