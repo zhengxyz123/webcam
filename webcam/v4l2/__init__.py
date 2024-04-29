@@ -4,7 +4,7 @@ from ctypes import string_at
 from io import BytesIO
 from mmap import mmap
 
-from pyglet.image import AbstractImage
+from pyglet.image import AbstractImage, ImageData
 from pyglet.image import load as load_image
 
 from webcam import BaseWebCam, BaseWebCamControlsManager, WebCamException
@@ -86,10 +86,11 @@ class v4l2WebCamControlsManager(BaseWebCamControlsManager):
 
 
 class v4l2WebCam(BaseWebCam):
-    def __init__(self, index: int):
-        super().__init__(index)
+    def __init__(self, index: int, width: int = 640, height: int = 480):
+        super().__init__(index, width, height)
         self._device = f"/dev/video{index}"
         self._fd = os.open(self._device, os.O_RDWR)
+        self._data_fmt = ""
         self._controls = v4l2WebCamControlsManager(self._fd)
         self._available_pixfmt = []
         self._mmaps = []
@@ -98,7 +99,7 @@ class v4l2WebCam(BaseWebCam):
         self._init()
 
     def __del__(self):
-        if self._is_opening:
+        if self._is_open:
             self.close()
         for m in self._mmaps:
             m.close()
@@ -125,8 +126,16 @@ class v4l2WebCam(BaseWebCam):
                 break
             self._available_pixfmt.append(vfmt.pixelformat)
 
-        if V4L2_PIX_FMT_MJPEG not in self._available_pixfmt:
-            raise WebCamException(f"{self._device} does not support mjpeg format")
+        if any([fmt in self._available_pixfmt for fmt in pixfmt_rgb]):
+            self._data_fmt = "RGB"
+        elif any([fmt in self._available_pixfmt for fmt in pixfmt_rgba]):
+            self._data_fmt = "RGBA"
+        elif V4L2_PIX_FMT_MJPEG in self._available_pixfmt:
+            self._data_fmt = "MJPEG"
+        else:
+            raise WebCamException(
+                f"{self._device} does not support RGB, RGBA or MJPEG format"
+            )
 
     def _init(self):
         vfmt = v4l2_format(type=v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
@@ -134,6 +143,7 @@ class v4l2WebCam(BaseWebCam):
         vfmt.fmt.pix.height = 480
         vfmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG
         VIDIOC_S_FMT(self._fd, vfmt)
+        self._size = (vfmt.fmt.pix.width, vfmt.fmt.pix.height)
 
         reqbuf = v4l2_requestbuffers(
             count=4,
@@ -156,19 +166,19 @@ class v4l2WebCam(BaseWebCam):
             )
 
     def open(self):
-        if self._is_opening:
+        if self._is_open:
             return
         VIDIOC_STREAMON(self._fd, v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
-        self._is_opening = True
+        self._is_open = True
 
     def close(self):
-        if not self._is_opening:
+        if not self._is_open:
             return
         VIDIOC_STREAMOFF(self._fd, v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
-        self._is_opening = False
+        self._is_open = False
 
     def capture(self) -> AbstractImage:
-        if not self._is_opening:
+        if not self._is_open:
             self.open()
         buffer = v4l2_buffer(
             type=v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE,
@@ -178,7 +188,10 @@ class v4l2WebCam(BaseWebCam):
         result = self._mmaps[buffer.index].read(buffer.length)
         self._mmaps[buffer.index].seek(0)
         VIDIOC_QBUF(self._fd, buffer)
-        image = load_image("image.jpg", BytesIO(result))
+        if self._data_fmt == "MJPEG":
+            image = load_image("image.jpg", BytesIO(result))
+        else:
+            image = ImageData(*self._size, self._data_fmt, result)
         return image
 
     @property

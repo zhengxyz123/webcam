@@ -242,3 +242,20 @@ V4L2_META_FMT_D4XX = v4l2_fourcc("D", "4", "X", "X")
 V4L2_META_FMT_VIVID = v4l2_fourcc("V", "I", "V", "D")
 V4L2_META_FMT_RK_ISP1_PARAMS = v4l2_fourcc("R", "K", "1", "P")
 V4L2_META_FMT_RK_ISP1_STAT_3A = v4l2_fourcc("R", "K", "1", "S")
+
+pixfmt_rgb = [
+    V4L2_PIX_FMT_RGB332,
+    V4L2_PIX_FMT_RGB444,
+    V4L2_PIX_FMT_RGB555,
+    V4L2_PIX_FMT_RGB555X,
+    V4L2_PIX_FMT_RGB565,
+    V4L2_PIX_FMT_RGB565X,
+    V4L2_PIX_FMT_RGB24,
+    V4L2_PIX_FMT_RGB32,
+]
+
+pixfmt_rgba = [
+    V4L2_PIX_FMT_RGBA444,
+    V4L2_PIX_FMT_RGBA555,
+    V4L2_PIX_FMT_RGBA32,
+]

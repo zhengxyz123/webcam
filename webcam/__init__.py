@@ -18,8 +18,9 @@ class BaseWebCamControlsManager:
 
 
 class BaseWebCam:
-    def __init__(self, index: int):
-        self._is_opening = False
+    def __init__(self, index: int, width: int, height: int):
+        self._is_open = False
+        self._size = (width, height)
 
     def open(self):
         raise NotImplementedError("this method is not implemented yet")
@@ -31,8 +32,12 @@ class BaseWebCam:
         raise NotImplementedError("this method is not implemented yet")
 
     @property
-    def is_opening(self) -> bool:
-        return self._is_opening
+    def is_open(self) -> bool:
+        return self._is_open
+
+    @property
+    def size(self) -> tuple[int, int]:
+        return self._size
 
     @property
     def controls(self) -> BaseWebCamControlsManager:
