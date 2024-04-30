@@ -130,12 +130,12 @@ class v4l2WebCam(BaseWebCam):
         vfmt = v4l2_format(type=v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         vfmt.fmt.pix.width = self._size[0]
         vfmt.fmt.pix.height = self._size[1]
-        if any(l := [fmt in self._available_pixfmt for fmt in pixfmt_rgb]):
-            self._data_fmt = "RGB"
-            vfmt.fmt.pix.pixelformat = pixfmt_rgb[l.index(True)]
-        elif any(l := [fmt in self._available_pixfmt for fmt in pixfmt_rgba]):
+        if any(l := [fmt in self._available_pixfmt for fmt in pixfmt_rgba]):
             self._data_fmt = "RGBA"
             vfmt.fmt.pix.pixelformat = pixfmt_rgba[l.index(True)]
+        elif any(l := [fmt in self._available_pixfmt for fmt in pixfmt_rgb]):
+            self._data_fmt = "RGB"
+            vfmt.fmt.pix.pixelformat = pixfmt_rgb[l.index(True)]
         elif V4L2_PIX_FMT_MJPEG in self._available_pixfmt:
             self._data_fmt = "MJPEG"
             vfmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG
