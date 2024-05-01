@@ -28,6 +28,7 @@ class ExampleWindow(Window):
         self.sprite.draw()
 
     def on_resize(self, width, height):
+        super().on_resize(width, height)
         w_img, h_img = self.sprite.image.width, self.sprite.image.height
         if self.width * h_img < self.height * w_img:
             self.sprite.scale = self.width / w_img

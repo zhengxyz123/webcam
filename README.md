@@ -10,8 +10,7 @@ camera.open()
 
 # capture a frame of picture and save it
 content = camera.capture()
-with open("image.jpg", "wb") as f:
-    f.write(content)
+content.save("image.png")
 
 camera.close()
 ```
