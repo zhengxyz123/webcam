@@ -115,30 +115,28 @@ class v4l2WebCam(BaseWebCam):
         if not self._capability.capabilities & V4L2_CAP_STREAMING:
             raise WebCamException(f"{self._device} does not support streaming")
 
-        vfmt = v4l2_fmtdesc(type=v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
-        index = 0
+        vfmt = v4l2_fmtdesc(index=0, type=v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         while True:
-            vfmt.index = index
-            index += 1
             try:
                 VIDIOC_ENUM_FMT(self._fd, vfmt)
             except OSError:
                 break
+            vfmt.index += 1
             self._available_pixfmt.append(vfmt.pixelformat)
 
     def _init(self):
         vfmt = v4l2_format(type=v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         vfmt.fmt.pix.width = self._size[0]
         vfmt.fmt.pix.height = self._size[1]
-        if any(l := [fmt in self._available_pixfmt for fmt in pixfmt_rgba]):
+        if V4L2_PIX_FMT_MJPEG in self._available_pixfmt:
+            self._data_fmt = "MJPEG"
+            vfmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG
+        elif any(l := [fmt in self._available_pixfmt for fmt in pixfmt_rgba]):
             self._data_fmt = "RGBA"
             vfmt.fmt.pix.pixelformat = pixfmt_rgba[l.index(True)]
         elif any(l := [fmt in self._available_pixfmt for fmt in pixfmt_rgb]):
             self._data_fmt = "RGB"
             vfmt.fmt.pix.pixelformat = pixfmt_rgb[l.index(True)]
-        elif V4L2_PIX_FMT_MJPEG in self._available_pixfmt:
-            self._data_fmt = "MJPEG"
-            vfmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG
         else:
             raise WebCamException(
                 f"{self._device} does not support RGB, RGBA or MJPEG format"
