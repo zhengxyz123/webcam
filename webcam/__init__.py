@@ -1,34 +1,37 @@
 from sys import platform
+from typing import Any
+
+from pyglet.image import AbstractImage
 
 
 class WebCamException(Exception):
-    def __init__(self, msg: str):
+    def __init__(self, msg: str) -> None:
         super().__init__(msg)
 
 
 class BaseWebCamControlsManager:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
-    def __getitem__(self, name: str):
+    def __getitem__(self, name: str) -> Any:
         raise NotImplementedError("this method is not implemented yet")
 
-    def __setitem__(self, name: str, value):
+    def __setitem__(self, name: str, value: Any) -> None:
         raise NotImplementedError("this method is not implemented yet")
 
 
 class BaseWebCam:
-    def __init__(self, index: int, width: int, height: int):
+    def __init__(self, index: int, width: int, height: int) -> None:
         self._is_open = False
         self._size = (width, height)
 
-    def open(self):
+    def open(self) -> None:
         raise NotImplementedError("this method is not implemented yet")
 
-    def close(self):
+    def close(self) -> None:
         raise NotImplementedError("this method is not implemented yet")
 
-    def capture(self) -> bytes:
+    def capture(self) -> AbstractImage:
         raise NotImplementedError("this method is not implemented yet")
 
     @property

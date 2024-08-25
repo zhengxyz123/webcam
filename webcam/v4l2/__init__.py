@@ -33,7 +33,7 @@ _str2cid = {
 
 
 class v4l2WebCamControlsManager(BaseWebCamControlsManager):
-    def __init__(self, fd: int):
+    def __init__(self, fd: int) -> None:
         super().__init__(fd)
         self._fd = fd
         self._ctrl_info = {}
@@ -48,7 +48,7 @@ class v4l2WebCamControlsManager(BaseWebCamControlsManager):
         VIDIOC_G_CTRL(self._fd, ctrl)
         return info.type(ctrl.value)
 
-    def __setitem__(self, name: str, value: int | bool):
+    def __setitem__(self, name: str, value: int | bool) -> None:
         if name not in self._ctrl_info:
             self.get_info(name)
         if not self._ctrl_info[name].available:
@@ -86,7 +86,7 @@ class v4l2WebCamControlsManager(BaseWebCamControlsManager):
 
 
 class v4l2WebCam(BaseWebCam):
-    def __init__(self, index: int, width: int = 640, height: int = 480):
+    def __init__(self, index: int, width: int = 640, height: int = 480) -> None:
         super().__init__(index, width, height)
         self._device = f"/dev/video{index}"
         self._fd = os.open(self._device, os.O_RDWR)
@@ -98,7 +98,7 @@ class v4l2WebCam(BaseWebCam):
         self._check()
         self._init()
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self._is_open:
             self.close()
         for m in self._mmaps:
@@ -108,7 +108,7 @@ class v4l2WebCam(BaseWebCam):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(device={self._device!r})"
 
-    def _check(self):
+    def _check(self) -> None:
         self._capability = VIDIOC_QUERYCAP(self._fd)
         if not self._capability.capabilities & V4L2_CAP_VIDEO_CAPTURE:
             raise WebCamException(f"{self._device} can not capture video")
@@ -124,7 +124,7 @@ class v4l2WebCam(BaseWebCam):
             vfmt.index += 1
             self._available_pixfmt.append(vfmt.pixelformat)
 
-    def _init(self):
+    def _init(self) -> None:
         vfmt = v4l2_format(type=v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         vfmt.fmt.pix.width = self._size[0]
         vfmt.fmt.pix.height = self._size[1]
@@ -164,13 +164,13 @@ class v4l2WebCam(BaseWebCam):
                 mmap(self._fd, length=buffer.length, offset=buffer.m.offset)
             )
 
-    def open(self):
+    def open(self) -> None:
         if self._is_open:
             return
         VIDIOC_STREAMON(self._fd, v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
         self._is_open = True
 
-    def close(self):
+    def close(self) -> None:
         if not self._is_open:
             return
         VIDIOC_STREAMOFF(self._fd, v4l2_buf_type.V4L2_BUF_TYPE_VIDEO_CAPTURE)
@@ -196,3 +196,6 @@ class v4l2WebCam(BaseWebCam):
     @property
     def controls(self) -> v4l2WebCamControlsManager:
         return self._controls
+
+
+__all__ = ("v4l2WebCamControlsManager", "v4l2WebCam")

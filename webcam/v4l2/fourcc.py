@@ -3,12 +3,12 @@ from ctypes import c_uint32 as _u32
 
 # /usr/include/linux/videodev2.h:79
 def v4l2_fourcc(a: str, b: str, c: str, d: str) -> int:
-    a, b, c, d = ord(a), ord(b), ord(c), ord(d)
+    ai, bi, ci, di = ord(a), ord(b), ord(c), ord(d)
     return (
-        _u32(a).value
-        | (_u32(b).value << 8)
-        | (_u32(c).value << 16)
-        | (_u32(d).value << 24)
+        _u32(ai).value
+        | (_u32(bi).value << 8)
+        | (_u32(ci).value << 16)
+        | (_u32(di).value << 24)
     )
 
 
